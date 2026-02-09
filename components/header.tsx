@@ -98,7 +98,7 @@ export function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:py-2.5 lg:px-6">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src="/Logo.png" alt="Qafilat Al-Tawhid" width={52} height={52} className="h-10 w-10 object-contain lg:h-12 lg:w-12" />
+            <Image src="/Logo.png" alt="Ilham Nasser Abu Sirahd Company" width={52} height={52} className="h-10 w-10 object-contain lg:h-12 lg:w-12" />
           </Link>
 
           {/* Desktop Links - center */}
@@ -202,7 +202,7 @@ export function Header() {
           <div className="absolute right-0 top-0 flex h-full w-80 animate-slide-in-right flex-col bg-background shadow-2xl">
             {/* Close area */}
             <div className="flex items-center justify-between border-b border-border px-6 py-5">
-              {/* <span className="font-serif text-lg font-bold text-primary">Qafilat Al-Tawhid</span> */}
+              {/* <span className="font-serif text-lg font-bold text-primary">Ilham Nasser Abu Sirahd Company</span> */}
               {/* <button
                 onClick={() => setIsMobileOpen(false)}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground hover:bg-muted"

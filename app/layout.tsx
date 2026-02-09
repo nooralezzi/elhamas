@@ -27,8 +27,8 @@ const notoArabic = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Qafilat Al-Tawhid | Premium Hajj & Umrah Services',
-    template: '%s | Qafilat Al-Tawhid',
+    default: 'Ilham Nasser Abu Sirahd Company',
+    template: '%s | Ilham Nasser Abu Sirahd Company',
   },
   description:
     'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services. Trusted pilgrimage packages, luxury accommodations, and expert guidance.',
@@ -42,21 +42,21 @@ export const metadata: Metadata = {
     'Saudi Arabia',
     'Holy Sites',
   ],
-  authors: [{ name: 'Qafilat Al-Tawhid' }],
-  creator: 'Qafilat Al-Tawhid',
+  authors: [{ name: 'Ilham Nasser Abu Sirahd Company' }],
+  creator: 'Ilham Nasser Abu Sirahd Company',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     alternateLocale: 'ar_SA',
-    url: 'https://qafilat-altawhid.com',
-    siteName: 'Qafilat Al-Tawhid',
-    title: 'Qafilat Al-Tawhid | Premium Hajj & Umrah Services',
+    url: 'https://elhamas.com',
+    siteName: 'Ilham Nasser Abu Sirahd Company',
+    title: 'Ilham Nasser Abu Sirahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Qafilat Al-Tawhid | Premium Hajj & Umrah Services',
+    title: 'Ilham Nasser Abu Sirahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
   },

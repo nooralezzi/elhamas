@@ -31,7 +31,7 @@ export function Footer() {
             <div className="mb-4 flex items-center gap-3">
                 <img src="/Logo.png" alt="EA for Umrah Services" width={80} height={80} className="h-30 w-32 object-contain" />
               {/* <div>
-                <span className="font-serif text-lg font-bold">Qafilat Al-Tawhid</span>
+                <span className="font-serif text-lg font-bold">Ilham Nasser Abu Sirahd Company</span>
                 <p className="text-[10px] tracking-[0.2em] uppercase text-primary-foreground/50">Hajj & Umrah Services</p>
               </div> */}
             </div>
@@ -40,7 +40,7 @@ export function Footer() {
             </p>
             <div className="space-y-2 text-sm text-primary-foreground/60">
               <p className="flex items-center gap-2"><Phone className="h-4 w-4" /> +966 12 552 2200</p>
-              <p className="flex items-center gap-2"><Mail className="h-4 w-4" /> info@qafilat-altawhid.com</p>
+              <p className="flex items-center gap-2"><Mail className="h-4 w-4" /> info@ilhamas.com</p>
               <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Makkah, Saudi Arabia</p>
             </div>
           </div>
