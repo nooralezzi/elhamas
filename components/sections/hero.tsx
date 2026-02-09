@@ -31,7 +31,7 @@ export function HeroSection() {
         }}
       >
         <Image
-          src="/images/kabaa_hero.jpg"
+          src="/images/img5.jpg"
           alt="The Holy Kaaba in Makkah during pilgrimage"
           fill
           className="object-cover"
