@@ -28,13 +28,13 @@ const services = [
     icon: FileCheck,
     key: "feature.easyVisa",
     descKey: "feature.easyVisa.desc",
-    image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
+    image: "images/img4.jpg",
   },
   {
     icon: Hotel,
     key: "feature.luxuryHotel",
     descKey: "feature.luxuryHotel.desc",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
+    image: "images/hotel.jpeg",
   },
   {
     icon: Plane,
