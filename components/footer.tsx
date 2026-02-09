@@ -30,7 +30,7 @@ export function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4 flex items-center gap-3">
-                <Image src="/Logo.png" alt="EA for Umrah Services" width={80} height={80} className="h-20 w-32 object-contain" />
+                <Image src="/Logo_ilham.png" alt="EA for Umrah Services" width={80} height={80} className="h-20 w-32 object-contain" />
               {/* <div>
                 <span className="font-serif text-lg font-bold">Ilham Nasser Abu Sirahd Company</span>
                 <p className="text-[10px] tracking-[0.2em] uppercase text-primary-foreground/50">Hajj & Umrah Services</p>
