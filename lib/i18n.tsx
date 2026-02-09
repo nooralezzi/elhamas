@@ -415,7 +415,7 @@ const I18nContext = createContext<I18nContextType | null>(null);
 
 export function I18nProvider({
   children,
-  defaultLocale = "en",
+  defaultLocale = "ar",
 }: {
   children: ReactNode;
   defaultLocale?: Locale;
