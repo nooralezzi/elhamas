@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils"
 const ACCENT = "#4a1c20"
 const easeOutExpo = [0.16, 1, 0.3, 1] as const
 
-const stats = [
-  { value: "15+", labelKey: "about.stats.years" as const },
-  { value: "50K+", labelKey: "about.stats.pilgrims" as const },
-  { value: "100+", labelKey: "about.stats.hotels" as const },
-  { value: "4.9", labelKey: "about.stats.rating" as const },
-]
+// const stats = [
+//   { value: "15+", labelKey: "about.stats.years" as const },
+//   { value: "50K+", labelKey: "about.stats.pilgrims" as const },
+//   { value: "100+", labelKey: "about.stats.hotels" as const },
+//   { value: "4.9", labelKey: "about.stats.rating" as const },
+// ]
 
 const cardKeys = [
   { key: "about.vision" as const, textKey: "about.vision.text" as const, icon: Eye },
@@ -48,7 +48,7 @@ export function AboutSection() {
               />
             </div>
             {/* Floating stats card */}
-            <motion.div
+            {/* <motion.div
               className="absolute -bottom-6 -right-4 rounded-xl bg-background p-6 shadow-2xl sm:-right-8"
               initial={{ opacity: 0, y: 16 }}
               animate={isVisible ? { opacity: 1, y: 0 } : {}}
@@ -63,7 +63,7 @@ export function AboutSection() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </motion.div> */}
           </motion.div>
 
           {/* Content side */}
