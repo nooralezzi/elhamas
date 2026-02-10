@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
@@ -40,13 +39,13 @@ export function AboutSection() {
             transition={{ duration: 0.6, ease: easeOutExpo }}
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-              <Image
-                src="/EA for Umrah Services Logo.svg"
-                alt="Pilgrims at the Grand Mosque"
-                fill
-                className="object-contain"
+              <iframe
+                src="https://www.youtube.com/embed/x8GmQjKHhno"
+                title="Elhamas Group Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full"
               />
-              <div className="absolute inset-0 bg-primary/10" />
             </div>
             {/* Floating stats card */}
             <motion.div

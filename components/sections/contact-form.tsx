@@ -15,9 +15,9 @@ const ACCENT = '#4a1c20'
 const easeOutExpo = [0.16, 1, 0.3, 1] as const
 
 const contactInfo = [
-  { key: 'contact.info.address' as const, valueEn: 'Riyadh, Saudi Arabia', valueAr: 'الرياض، المملكة العربية السعودية', icon: MapPin },
-  { key: 'contact.info.phone' as const, valueEn: '+966 56 661 0996', valueAr: '٩٦٦ ٥٦ ٦٦١ ٠٩٩٦+', icon: Phone },
-  { key: 'contact.info.email' as const, valueEn: 'info@example.com', valueAr: 'info@example.com', icon: Mail },
+  { key: 'contact.info.address' as const, valueEn: 'Mekkah, Saudi Arabia', valueAr: 'مكه، المملكة العربية السعودية', icon: MapPin },
+  { key: 'contact.info.phone' as const, valueEn: '+966 56 661 0996', valueAr: '٩٦٦ ٥٦ ٦٦١ ٩٩٦+', icon: Phone },
+  { key: 'contact.info.email' as const, valueEn: 'support@elhamas.com', valueAr: 'support@elhamas.com', icon: Mail },
   { key: 'contact.info.hours' as const, valueEn: 'Sun–Thu 9AM–6PM', valueAr: 'الأحد–الخميس ٩ص–٦م', icon: Clock },
 ]
 

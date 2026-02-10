@@ -138,9 +138,9 @@ const translations: Record<Locale, Record<string, string>> = {
     "about.title": "About Us",
     "about.subtitle": "Your trusted partner for sacred journeys",
     "about.badge": "Who we are",
-    "about.companyName": "Ilham Nasser Abu Sirahd Company",
+    "about.companyName": "Elham Nasser Abu Sarahd Company",
     "about.intro1":
-      "Ilham Nasser Abu Sirahd Company is a company specialized in organizing Umrah programs and related tourism services.",
+      "Elham Nasser Abu Sarahd Company is a company specialized in organizing Umrah programs and related tourism services.",
     "about.intro2":
       "We work to provide an integrated experience that places the comfort and peace of mind of the pilgrim at the forefront of our priorities.",
     "about.intro3":
@@ -196,7 +196,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "footer.rights": "All rights reserved.",
     "footer.privacyPolicy": "Privacy Policy",
     "footer.termsOfService": "Terms of Service",
-    "footer.companyName": "Ilham Nasser Abu Sirahd Company",
+    "footer.companyName": "Elham Nasser Abu Sarahd Company",
     "footer.hajjPackages": "Hajj Packages",
     "footer.umrahPackages": "Umrah Packages",
     "why.competent": "Competent",

@@ -27,8 +27,8 @@ const notoArabic = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ilham Nasser Abu Sirahd Company',
-    template: '%s | Ilham Nasser Abu Sirahd Company',
+    default: 'Elham Nasser Abu Sarahd Company',
+    template: '%s | Elham Nasser Abu Sarahd Company',
   },
   description:
     'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services. Trusted pilgrimage packages, luxury accommodations, and expert guidance.',
@@ -42,21 +42,21 @@ export const metadata: Metadata = {
     'Saudi Arabia',
     'Holy Sites',
   ],
-  authors: [{ name: 'Ilham Nasser Abu Sirahd Company' }],
-  creator: 'Ilham Nasser Abu Sirahd Company',
+  authors: [{ name: 'Elham Nasser Abu Sarahd Company' }],
+  creator: 'Elham Nasser Abu Sarahd Company',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     alternateLocale: 'ar_SA',
     url: 'https://elhamas.com',
-    siteName: 'Ilham Nasser Abu Sirahd Company',
-    title: 'Ilham Nasser Abu Sirahd Company',
+    siteName: 'Elham Nasser Abu Sarahd Company',
+    title: 'Elham Nasser Abu Sarahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ilham Nasser Abu Sirahd Company',
+    title: 'Elham Nasser Abu Sarahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
   },
