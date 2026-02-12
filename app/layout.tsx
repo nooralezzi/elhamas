@@ -53,12 +53,21 @@ export const metadata: Metadata = {
     title: 'Elham Nasser Abu Sarahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
+    images: [
+      {
+        url: 'https://elhamas.com/Logo_ilham.png',
+        width: 1200,
+        height: 630,
+        alt: 'Elham Nasser Abu Sarahd Company - Premium Hajj and Umrah Services',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Elham Nasser Abu Sarahd Company',
     description:
       'Experience the spiritual journey of a lifetime with our premium Hajj and Umrah services.',
+    images: ['https://elhamas.com/Logo_ilham.png'],
   },
   robots: {
     index: true,

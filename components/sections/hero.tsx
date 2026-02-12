@@ -80,7 +80,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.45, ease: easeOutExpo }}
           >
             <motion.a
-              href="/packages"
+              href="/"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg md:px-8 md:py-3.5 md:text-base"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -89,9 +89,7 @@ export function HeroSection() {
               {t("hero.cta")}
             </motion.a>
             <motion.a
-              href="https://wa.me/966566610996"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/"
               className="rounded-lg border-2 border-white/90 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm md:px-8 md:py-3.5 md:text-base"
               whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.2)" }}
               whileTap={{ scale: 0.98 }}

@@ -162,7 +162,7 @@ export function FeaturedPackagesSection({ packages }: FeaturedPackagesProps) {
               variant="outline"
               className="rounded-lg bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white transition-colors duration-200"
             >
-              <Link href="/packages">{t("home.featuredPackages.allTrips")}</Link>
+              <Link href="/">{t("home.featuredPackages.allTrips")}</Link>
             </Button>
           </motion.div>
         </motion.div>
@@ -242,7 +242,7 @@ export function FeaturedPackagesSection({ packages }: FeaturedPackagesProps) {
                         className="mt-4 rounded-lg font-medium text-white hover:opacity-90 w-full transition-opacity duration-200"
                         style={{ backgroundColor: PACKAGE_COLOR }}
                       >
-                        <Link href={href}>{t("common.bookNow")}</Link>
+                        <Link href="/">{t("common.bookNow")}</Link>
                       </Button>
                     </div>
                   </div>
