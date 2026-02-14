@@ -72,7 +72,7 @@ export function Header() {
                 aria-label="WhatsApp"
               >
                 <WhatsAppIcon className="h-3.5 w-3.5 shrink-0" />
-                <span dir="ltr">+966 56 661 0996</span>
+                <span dir="ltr">+966566610996</span>
               </a>
               <a
                 href="mailto:support@elhamas.com"
@@ -98,7 +98,7 @@ export function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:py-2.5 lg:px-6">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src="/Logo_ilham.png" alt="Elham Nasser Abu Sarahd Company" width={52} height={52} className="h-10 w-10 object-contain lg:h-12 lg:w-12" />
+            <Image src="/Logo_ilham.png" alt="Elham Nasser Abu Sarahd Company" width={52} height={52} className="h-14 w-14 object-contain lg:h-16 lg:w-16" />
           </Link>
 
           {/* Desktop Links - center */}
