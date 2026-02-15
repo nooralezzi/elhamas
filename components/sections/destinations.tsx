@@ -28,7 +28,7 @@ const services = [
     icon: FileCheck,
     key: "feature.easyVisa",
     descKey: "feature.easyVisa.desc",
-    image: "images/img4.jpg",
+    image: "images/visa.png",
   },
   {
     icon: Hotel,
@@ -70,13 +70,27 @@ export function DestinationsSection() {
     <section
       ref={sectionRef}
       id="destinations"
-      className="relative overflow-hidden py-20 md:py-28"
+      className="relative overflow-hidden"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      {/* Full-screen YouTube Video */}
+      <div className="relative w-full h-[50vh] min-h-[300px] sm:h-[60vh] md:h-[70vh] lg:h-screen">
+        <iframe
+          src="https://www.youtube.com/embed/7t_QtBIRqeY?autoplay=1&mute=1&loop=1&playlist=7t_QtBIRqeY&controls=0&showinfo=0&rel=0&modestbranding=1"
+          title="Elhamas Group Video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="absolute inset-0 w-full h-full"
+          style={{ border: 'none' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#2d0f12]/80 pointer-events-none" />
+      </div>
 
-      <div className="container relative z-10 mx-auto px-4">
+      <div className="relative py-20 md:py-28">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+        <div className="container relative z-10 mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={isVisible ? { opacity: 1, y: 0 } : {}}
@@ -194,6 +208,7 @@ export function DestinationsSection() {
             </div>
           )}
         </motion.div>
+        </div>
       </div>
     </section>
   )
