@@ -46,7 +46,7 @@ const services = [
     icon: Map,
     key: "feature.roadmapGuide",
     descKey: "feature.roadmapGuide.desc",
-    image: "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80",
+    image: "images/tourism.jpg",
   },
 ]
 
@@ -66,31 +66,52 @@ export function DestinationsSection() {
     })
   }, [api])
 
+  // YouTube video ID extracted from URL
+  const videoId = "foFdRWA7YaY"
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}&iv_load_policy=3&fs=0&cc_load_policy=0&playsinline=1&vq=hd1080&enablejsapi=1`
+
   return (
-    <section
-      ref={sectionRef}
-      id="destinations"
-      className="relative overflow-hidden"
-    >
-      {/* Full-screen YouTube Video */}
-      <div className="relative w-full h-[50vh] min-h-[300px] sm:h-[60vh] md:h-[70vh] lg:h-screen">
+    <>
+      {/* YouTube Video Hero Section */}
+      <div 
+        className="relative w-full h-screen overflow-hidden bg-black"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100vh',
+        }}
+      >
         <iframe
-          src="https://www.youtube.com/embed/7t_QtBIRqeY?autoplay=1&mute=1&loop=1&playlist=7t_QtBIRqeY&controls=0&showinfo=0&rel=0&modestbranding=1"
-          title="Elhamas Group Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          src={youtubeEmbedUrl}
+          className="absolute"
+          allow="autoplay; encrypted-media"
           allowFullScreen
-          className="absolute inset-0 w-full h-full"
-          style={{ border: 'none' }}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100vw',
+            height: '56.25vw',
+            minHeight: '100vh',
+            minWidth: '177.77777778vh',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            border: 'none',
+          }}
+          title="Hero Video"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#2d0f12]/80 pointer-events-none" />
       </div>
 
-      <div className="relative py-20 md:py-28">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <section
+        ref={sectionRef}
+        id="destinations"
+        className="relative overflow-hidden py-20 md:py-28"
+      >
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-        <div className="container relative z-10 mx-auto px-4">
+      <div className="container relative z-10 mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={isVisible ? { opacity: 1, y: 0 } : {}}
@@ -208,8 +229,8 @@ export function DestinationsSection() {
             </div>
           )}
         </motion.div>
-        </div>
       </div>
     </section>
+    </>
   )
 }
