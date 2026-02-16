@@ -23,7 +23,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 
-const YOUTUBE_VIDEO_ID = "7t_QtBIRqeY"
+const YOUTUBE_VIDEO_ID = "xkUj3DfBDUY"
 
 const services = [
   {
@@ -69,7 +69,8 @@ export function DestinationsSection() {
   }, [api])
 
   // Build YouTube embed URL with all required parameters
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${YOUTUBE_VIDEO_ID}&playsinline=1&iv_load_policy=3&fs=0&cc_load_policy=0&hd=1&vq=hd1080&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`
+  // Video plays from 0:38 (38 seconds) to 1:28 (88 seconds)
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${YOUTUBE_VIDEO_ID}&playsinline=1&iv_load_policy=3&fs=0&cc_load_policy=0&hd=1&vq=hd1080&enablejsapi=1&start=38&end=88&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`
 
   return (
     <>
