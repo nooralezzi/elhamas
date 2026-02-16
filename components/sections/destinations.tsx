@@ -23,6 +23,8 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 
+const YOUTUBE_VIDEO_ID = "7t_QtBIRqeY"
+
 const services = [
   {
     icon: FileCheck,
@@ -66,52 +68,47 @@ export function DestinationsSection() {
     })
   }, [api])
 
-  // YouTube video ID extracted from URL
-  const videoId = "foFdRWA7YaY"
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}&iv_load_policy=3&fs=0&cc_load_policy=0&playsinline=1&vq=hd1080&enablejsapi=1`
+  // Build YouTube embed URL with all required parameters
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${YOUTUBE_VIDEO_ID}&playsinline=1&iv_load_policy=3&fs=0&cc_load_policy=0&hd=1&vq=hd1080&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`
 
   return (
     <>
-      {/* YouTube Video Hero Section */}
-      <div 
-        className="relative w-full h-screen overflow-hidden bg-black"
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: '100vh',
-        }}
-      >
-        <iframe
-          src={youtubeEmbedUrl}
-          className="absolute"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: '100vw',
-            height: '56.25vw',
-            minHeight: '100vh',
-            minWidth: '177.77777778vh',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            border: 'none',
-          }}
-          title="Hero Video"
-        />
+      {/* Full-viewport hero video - appears above all other content */}
+      <div className="relative w-full h-screen overflow-hidden bg-black">
+        <div className="absolute inset-0 w-full h-full">
+          <iframe
+            src={youtubeEmbedUrl}
+            title="Hero Video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen={false}
+            className="absolute top-1/2 left-1/2"
+            style={{
+              pointerEvents: 'none',
+              width: '100vw',
+              height: '56.25vw',
+              minHeight: '100vh',
+              minWidth: '177.77777778vh',
+              transform: 'translate(-50%, -50%)',
+              border: 'none',
+            }}
+            frameBorder="0"
+          />
+          {/* Overlay gradient for smooth transition */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#2d0f12]/90 z-10 pointer-events-none" />
+        </div>
       </div>
 
+      {/* Main content section */}
       <section
         ref={sectionRef}
         id="destinations"
         className="relative overflow-hidden py-20 md:py-28"
       >
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2d0f12] via-[#3a1518] to-[#4a1c20]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,hsl(var(--primary)/0.15),transparent)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-      <div className="container relative z-10 mx-auto px-4">
+        <div className="container relative z-10 mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={isVisible ? { opacity: 1, y: 0 } : {}}
@@ -229,8 +226,8 @@ export function DestinationsSection() {
             </div>
           )}
         </motion.div>
-      </div>
-    </section>
+        </div>
+      </section>
     </>
   )
 }
