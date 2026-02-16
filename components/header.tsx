@@ -98,7 +98,7 @@ export function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:py-2.5 lg:px-6">
           {/* Logo */}
           <Link href="/" className="shrink-0">
-            <Image src="/Logo_ilham.png" alt="Elham Nasser Abu Sarahd Company" width={120} height={120} className="h-28 w-28 object-contain lg:h-32 lg:w-32" />
+            <Image src="/Logo_ilham.png" alt="Elham Nasser Abu Sarahd Company" width={80} height={80} className="h-23 w-24 object-contain lg:h-24 lg:w-24" />
           </Link>
 
           {/* Desktop Links - center */}
