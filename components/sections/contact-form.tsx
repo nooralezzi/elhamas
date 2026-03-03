@@ -17,7 +17,7 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as const;
 const contactInfo = [
   {
     key: "contact.info.address" as const,
-    valueEn: "Mekkah, Saudi Arabia",
+    valueEn: "Makkah, Saudi Arabia",
     valueAr: "مكه، المملكة العربية السعودية",
     icon: MapPin,
   },
@@ -46,45 +46,81 @@ export function ContactFormSection() {
   const [sectionRef, isVisible] = useScrollAnimation<HTMLElement>(0.08);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
-    // Placeholder: replace with your API or form action
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    setSubmitted(true);
+    setError(null);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const countryCode = (formData.get("countryCode")?.toString() ?? "").trim() || "+966";
+    const phone = (formData.get("phone")?.toString() ?? "").trim();
+    const fullPhone = countryCode && phone ? `${countryCode} ${phone}` : countryCode || phone || undefined;
+    const payload = {
+      type: "contact",
+      referenceId: "contact",
+      referenceName: (formData.get("subject")?.toString() ?? "").trim() || "Contact Form",
+      name: (formData.get("name")?.toString() ?? "").trim(),
+      email: (formData.get("email")?.toString() ?? "").trim(),
+      nationality: (formData.get("nationality")?.toString() ?? "").trim() || undefined,
+      phone: fullPhone,
+      message: (formData.get("message")?.toString() ?? "").trim(),
+      locale,
+    };
+    try {
+      const res = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      setSubmitted(true);
+      form.reset();
+      const countryInput = form.querySelector<HTMLInputElement>('[name="countryCode"]');
+      if (countryInput) countryInput.value = "+966";
+    } catch (err) {
+      console.error(err);
+      setError(
+        locale === "ar"
+          ? "حدث خطأ أثناء الإرسال. حاول مرة أخرى."
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <section
       ref={sectionRef}
       id="contact"
-      className="py-16 sm:py-20 bg-white scroll-mt-[4.5rem]"
+      className="py-10 sm:py-14 md:py-16 lg:py-20 bg-white scroll-mt-[4.5rem] overflow-x-hidden"
     >
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-3 sm:px-4 min-w-0">
         <div className="max-w-4xl mx-auto">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-10 md:mb-12"
             initial={{ opacity: 0, y: 16 }}
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, ease: easeOutExpo }}
           >
             <h2
-              className="text-3xl md:text-4xl lg:text-[2.5rem] font-bold mb-2"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-bold mb-2 break-words"
               style={{ color: ACCENT }}
             >
               {t("contact.title")}
             </h2>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
+            <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto break-words px-2">
               {t("contact.subtitle")}
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 xl:gap-12">
             {/* Form */}
             <motion.div
-              className="lg:col-span-2"
+              className="lg:col-span-2 min-w-0"
               initial={{ opacity: 0, x: -16 }}
               animate={isVisible ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.08, ease: easeOutExpo }}
@@ -92,11 +128,11 @@ export function ContactFormSection() {
               <form
                 onSubmit={handleSubmit}
                 className={cn(
-                  "rounded-2xl border border-border/60 bg-muted/30 p-6 sm:p-8 transition-shadow duration-300 hover:shadow-md focus-within:shadow-md",
+                  "rounded-xl sm:rounded-2xl border border-border/60 bg-muted/30 p-4 sm:p-6 md:p-8 transition-shadow duration-300 hover:shadow-md focus-within:shadow-md",
                   isRTL && "text-right",
                 )}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="space-y-2">
                     <Label htmlFor="contact-name" className="text-foreground">
                       {t("contact.form.name")}
@@ -126,25 +162,54 @@ export function ContactFormSection() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
+                <div className="space-y-2 mb-3 sm:mb-4">
                     <Label htmlFor="contact-phone" className="text-foreground">
                       {t("contact.form.phone")}
                     </Label>
+                    <div
+                      className={cn(
+                        "flex gap-0 rounded-lg border border-input bg-background overflow-hidden transition-[box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                        isRTL && "flex-row-reverse",
+                      )}
+                    >
+                      <Input
+                        id="contact-countryCode"
+                        name="countryCode"
+                        type="tel"
+                        defaultValue="+966"
+                        className={cn(
+                          "w-20 sm:w-24 shrink-0 rounded-none border-0 bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0",
+                          isRTL ? "border-l border-input" : "border-r border-input",
+                        )}
+                        dir="ltr"
+                        aria-label={t("inquiry.form.countryCode")}
+                      />
+                      <Input
+                        id="contact-phone"
+                        name="phone"
+                        type="tel"
+                        placeholder={t("contact.form.phone")}
+                        className="flex-1 min-w-0 rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        dir="ltr"
+                        aria-label={t("contact.form.phone")}
+                      />
+                    </div>
+                  </div>
+                <div className="space-y-2 mb-3 sm:mb-4">
+                    <Label htmlFor="contact-nationality" className="text-foreground">
+                      {t("inquiry.form.nationality")}
+                    </Label>
                     <Input
-                      id="contact-phone"
-                      name="phone"
-                      type="tel"
-                      placeholder={t("contact.form.phone")}
+                      id="contact-nationality"
+                      name="nationality"
+                      type="text"
+                      placeholder={t("inquiry.form.nationality")}
                       className="bg-background transition-[box-shadow] duration-200"
                       dir={isRTL ? "rtl" : "ltr"}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="contact-subject"
-                      className="text-foreground"
-                    >
+                <div className="space-y-2 mb-3 sm:mb-4">
+                    <Label htmlFor="contact-subject" className="text-foreground">
                       {t("contact.form.subject")}
                     </Label>
                     <Input
@@ -157,8 +222,7 @@ export function ContactFormSection() {
                       dir={isRTL ? "rtl" : "ltr"}
                     />
                   </div>
-                </div>
-                <div className="space-y-2 mb-6">
+                <div className="space-y-2 mb-4 sm:mb-6">
                   <Label htmlFor="contact-message" className="text-foreground">
                     {t("contact.form.message")}
                   </Label>
@@ -172,7 +236,12 @@ export function ContactFormSection() {
                     dir={isRTL ? "rtl" : "ltr"}
                   />
                 </div>
-                {submitted && (
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mb-4" style={isRTL ? { textAlign: "right" } : undefined}>
+                    {error}
+                  </p>
+                )}
+                {submitted && !error && (
                   <motion.p
                     className="text-sm font-medium mb-4 rounded-lg py-2 px-3 bg-green-500/10 text-green-700 dark:text-green-400"
                     style={isRTL ? { textAlign: "right" } : undefined}
@@ -190,7 +259,7 @@ export function ContactFormSection() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="rounded-lg font-medium text-white hover:opacity-90 w-full sm:w-auto min-w-[160px] transition-opacity duration-200"
+                    className="rounded-lg font-medium text-white hover:opacity-90 w-full sm:w-auto min-w-0 sm:min-w-[160px] transition-opacity duration-200"
                     style={{ backgroundColor: ACCENT }}
                   >
                     {loading
@@ -205,21 +274,24 @@ export function ContactFormSection() {
 
             {/* Contact info */}
             <motion.div
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6 min-w-0"
               initial={{ opacity: 0, x: 16 }}
               animate={isVisible ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.12, ease: easeOutExpo }}
             >
-              <h3 className="text-lg font-semibold" style={{ color: ACCENT }}>
+              <h3
+                className="text-base sm:text-lg font-semibold break-words"
+                style={{ color: ACCENT }}
+              >
                 {t("footer.contact")}
               </h3>
-              <ul className="space-y-4">
+              <ul className="space-y-3 sm:space-y-4">
                 {contactInfo.map(
                   ({ key, valueEn, valueAr, icon: Icon }, index) => (
                     <motion.li
                       key={key}
                       className={cn(
-                        "flex gap-3 items-start",
+                        "flex gap-2 sm:gap-3 items-start min-w-0",
                         isRTL && "flex-row-reverse text-right",
                       )}
                       initial={{ opacity: 0, x: isRTL ? -12 : 12 }}
@@ -231,17 +303,17 @@ export function ContactFormSection() {
                       }}
                     >
                       <span
-                        className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white transition-transform duration-200 hover:scale-105"
+                        className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white transition-transform duration-200 hover:scale-105"
                         style={{ backgroundColor: ACCENT }}
                       >
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </span>
-                      <div>
+                      <div className="min-w-0 overflow-hidden">
                         <p className="text-xs font-medium text-muted-foreground mb-0.5">
                           {t(key)}
                         </p>
                         <p
-                          className="text-sm text-foreground"
+                          className="text-xs sm:text-sm text-foreground break-words"
                           dir={
                             (key === "contact.info.phone" ||
                               key === "contact.info.email") &&

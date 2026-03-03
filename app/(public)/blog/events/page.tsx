@@ -1,9 +1,11 @@
 import { getEvents } from '@/lib/db'
 import { EventsPageClient } from './page-client'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Events',
-  description: 'Join our special Islamic events, guided tours, and spiritual gatherings.',
+  description: 'Upcoming events and activities.',
 }
 
 export default async function EventsPage() {

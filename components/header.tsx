@@ -22,11 +22,14 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 const navLinks = [
   { href: "/", key: "nav.home" },
-  { href: "/#destinations", key: "nav.services" },
-  { href: "/#packages", key: "nav.packages" },
-  { href: "/#blog", key: "nav.blog" },
-  { href: "/#about", key: "nav.about" },
-  { href: "/#contact", key: "nav.contact" },
+  { href: "/services", key: "nav.services" },
+  { href: "/packages", key: "nav.packages" },
+  { href: "/hotels", key: "nav.hotels" },
+  { href: "/transportation", key: "nav.transportation" },
+  // { href: "/visas", key: "nav.visas" },
+  { href: "/blog", key: "nav.blog" },
+  { href: "/about", key: "nav.about" },
+  { href: "/contact", key: "nav.contact" },
 ]
 
 export function Header() {
@@ -95,7 +98,7 @@ export function Header() {
             : "top-[32px] bg-transparent"
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:py-2.5 lg:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4  lg:px-6">
           {/* Logo */}
           <Link href="/" className="shrink-0">
             <Image src="/Logo_ilham.png" alt="Elham Nasser Abu Sarahd Company" width={80} height={80} className="h-23 w-24 object-contain lg:h-24 lg:w-24" />

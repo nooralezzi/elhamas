@@ -1,5 +1,8 @@
-import { getTourPackages } from '@/lib/db'
+import { getTourPackages, getPackageCategories, getLocations, getPackageDiscoverCard } from '@/lib/db'
 import { PackagesPageClient } from './page-client'
+
+// Force dynamic rendering so categories/locations added in admin appear immediately in production
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Tour Packages',
@@ -7,6 +10,18 @@ export const metadata = {
 }
 
 export default async function PackagesPage() {
-  const packages = await getTourPackages()
-  return <PackagesPageClient packages={packages} />
+  const [packages, categories, locations, discoverCard] = await Promise.all([
+    getTourPackages(),
+    getPackageCategories(),
+    getLocations(),
+    getPackageDiscoverCard(),
+  ])
+  return (
+    <PackagesPageClient
+      packages={packages}
+      categories={categories}
+      locations={locations}
+      discoverCard={discoverCard}
+    />
+  )
 }
