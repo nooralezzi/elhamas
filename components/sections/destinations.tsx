@@ -152,7 +152,7 @@ export function DestinationsSection() {
                     className="pl-3 sm:pl-4 md:pl-6 basis-full md:basis-1/2 lg:basis-1/3"
                   >
                     <motion.div
-                      className="group relative overflow-hidden rounded-xl sm:rounded-2xl ring-2 ring-white/10 min-w-0"
+                      className="group relative overflow-hidden rounded-xl sm:rounded-2xl min-w-0"
                       initial={{ opacity: 0, y: 20 }}
                       animate={isVisible ? { opacity: 1, y: 0 } : {}}
                       transition={{
