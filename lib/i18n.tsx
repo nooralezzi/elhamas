@@ -683,6 +683,7 @@ const translations: Record<Locale, Record<string, string>> = {
 };
 
 const LOCALE_STORAGE_KEY = "elhamas-locale";
+const LOCALE_COOKIE_KEY = "elhamas-locale";
 
 function getStoredLocale(defaultLocale: Locale): Locale {
   if (typeof window === "undefined") return defaultLocale;
@@ -715,6 +716,7 @@ export function I18nProvider({
     } catch {
       // ignore
     }
+    document.cookie = `${LOCALE_COOKIE_KEY}=${newLocale}; path=/; max-age=31536000; samesite=lax`;
     document.documentElement.lang = newLocale;
     document.documentElement.dir = newLocale === "ar" ? "rtl" : "ltr";
   }, []);
