@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Calendar, MapPin } from 'lucide-react'
@@ -22,8 +23,20 @@ function formatDate(d: Date | null): string {
   })
 }
 
+function toTime(d: Date): number {
+  return (d instanceof Date ? d : new Date(d)).getTime()
+}
+
 export function ArticlesPageClient({ articles }: ArticlesPageClientProps) {
   const { t, locale } = useI18n()
+  const dir = locale === 'ar' ? 'rtl' : 'ltr'
+
+  // Oldest → newest; LTR places oldest on the left, RTL on the right
+  const sortedArticles = useMemo(
+    () =>
+      [...articles].sort((a, b) => toTime(a.created_at) - toTime(b.created_at)),
+    [articles]
+  )
 
   return (
     <>
@@ -35,13 +48,16 @@ export function ArticlesPageClient({ articles }: ArticlesPageClientProps) {
       <section className="py-8 sm:py-10 md:py-12 lg:py-16 overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4 min-w-0">
           <div className="max-w-5xl mx-auto">
-            {articles.length === 0 ? (
+            {sortedArticles.length === 0 ? (
               <p className="text-muted-foreground py-10 sm:py-12 text-center rounded-xl border border-dashed text-sm px-4">
                 {locale === 'ar' ? 'لا توجد مقالات بعد.' : 'No articles yet.'}
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {articles.map((post, index) => {
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+                dir={dir}
+              >
+                {sortedArticles.map((post, index) => {
                   const title = getLocalizedContent(
                     post as unknown as Record<string, unknown>,
                     'title',
