@@ -23,14 +23,12 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 
-const YOUTUBE_VIDEO_ID = "xkUj3DfBDUY"
-
 const services = [
   {
     icon: FileCheck,
     key: "feature.easyVisa",
     descKey: "feature.easyVisa.desc",
-    image: "images/visa.png",
+    image: "images/visa2.jpeg",
   },
   {
     icon: Hotel,
@@ -42,7 +40,7 @@ const services = [
     icon: Plane,
     key: "feature.vipPlanes",
     descKey: "feature.vipPlanes.desc",
-    image: "images/transportation1.jpeg",
+    image: "images/bus.jpeg",
   },
   {
     icon: Map,
@@ -68,31 +66,27 @@ export function DestinationsSection() {
     })
   }, [api])
 
-  // Build YouTube embed URL with all required parameters
-  // Video plays from 0:38 (38 seconds) to 1:28 (88 seconds)
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${YOUTUBE_VIDEO_ID}&playsinline=1&iv_load_policy=3&fs=0&cc_load_policy=0&hd=1&vq=hd1080&enablejsapi=1&start=38&end=88&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`
-
   return (
     <>
       {/* Full-viewport hero video - appears above all other content */}
       <div className="relative w-full h-screen overflow-hidden bg-black">
         <div className="absolute inset-0 w-full h-full">
-          <iframe
-            src={youtubeEmbedUrl}
-            title="Hero Video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen={false}
-            className="absolute top-1/2 left-1/2"
+          <video
+            src="/images/homepage.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="Hero Video"
+            className="absolute top-1/2 left-1/2 pointer-events-none"
             style={{
-              pointerEvents: 'none',
-              width: '100vw',
-              height: '56.25vw',
-              minHeight: '100vh',
-              minWidth: '177.77777778vh',
-              transform: 'translate(-50%, -50%)',
-              border: 'none',
+              width: "100vw",
+              height: "56.25vw",
+              minHeight: "100vh",
+              minWidth: "177.77777778vh",
+              transform: "translate(-50%, -50%)",
+              objectFit: "cover",
             }}
-            frameBorder="0"
           />
           {/* Overlay gradient for smooth transition */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#2d0f12]/90 z-10 pointer-events-none" />

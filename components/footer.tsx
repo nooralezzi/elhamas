@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, MapPin, Twitter, Instagram, Youtube } from "lucide-react"
+import { Phone, Mail, MapPin, Twitter, Instagram, Youtube, Facebook } from "lucide-react"
 import { useI18n } from "@/lib/i18n"
 
 const quickLinkKeys: { href: string; key: string }[] = [
@@ -74,6 +74,15 @@ export function Footer() {
                   aria-label="YouTube"
                 >
                   <Youtube className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.facebook.com/share/1C1uZsxJAE/?mibextid=wwXIfr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-foreground/10 text-primary-foreground/60 transition-all hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-4 w-4" />
                 </a>
               </div>
             </div>
