@@ -68,29 +68,19 @@ export function DestinationsSection() {
 
   return (
     <>
-      {/* Full-viewport hero video - appears above all other content */}
-      <div className="relative w-full h-screen overflow-hidden bg-black">
-        <div className="absolute inset-0 w-full h-full">
-          <video
-            src="/images/homepage.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label="Hero Video"
-            className="absolute top-1/2 left-1/2 pointer-events-none"
-            style={{
-              width: "100vw",
-              height: "56.25vw",
-              minHeight: "100vh",
-              minWidth: "177.77777778vh",
-              transform: "translate(-50%, -50%)",
-              objectFit: "cover",
-            }}
-          />
-          {/* Overlay gradient for smooth transition */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#2d0f12]/90 z-10 pointer-events-none" />
-        </div>
+      {/* Hero video — full width, natural aspect ratio */}
+      <div className="relative w-full overflow-hidden bg-black">
+        <video
+          src="/images/homepage.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-label="Hero Video"
+          className="pointer-events-none block h-auto w-full"
+        />
+        {/* Overlay gradient for smooth transition */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-1/3 bg-gradient-to-b from-transparent to-[#2d0f12]/90" />
       </div>
 
       {/* Main content section */}
