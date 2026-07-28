@@ -6,12 +6,27 @@ import { ChevronLeft, ChevronRight, Check, MapPin, Car, Banknote } from 'lucide-
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldError, fieldInvalidClass } from '@/components/ui/field-error'
 import { useI18n, getLocalizedContent } from '@/lib/i18n'
 import type { Transportation } from '@/lib/db'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  trimValue,
+  digitsOnly,
+  validateContactFields,
+  validateDate,
+  validationMessage,
+  handlePhoneInput,
+  handleCountryCodeInput,
+  handleLettersOnlyInput,
+  type FieldErrors,
+} from '@/lib/form-validation'
 
 interface TransportationDetailClientProps {
   item: Transportation
@@ -22,7 +37,8 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [todayIso, setTodayIso] = useState<string | undefined>()
 
   useEffect(() => {
@@ -65,16 +81,50 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
   const handleInquirySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
-    setError(null)
+    setFormError(null)
+    setSubmitted(false)
+
     const form = e.currentTarget
     const formData = new FormData(form)
-    const countryCode = (formData.get('countryCode')?.toString() ?? '').trim()
-    const phone = (formData.get('phone')?.toString() ?? '').trim()
-    const fullPhone =
-      countryCode || phone ? [countryCode, phone].filter(Boolean).join(' ') : undefined
-    const destination = formData.get('destination')?.toString() ?? ''
-    const dateOfBooking = formData.get('dateOfBooking')?.toString() ?? ''
+    const countryCode = trimValue(formData.get('countryCode')) || '+966'
+    const phone = digitsOnly(trimValue(formData.get('phone')))
+    const customerName = trimValue(formData.get('name'))
+    const email = trimValue(formData.get('email'))
+    const nationality = trimValue(formData.get('nationality'))
+    const destination = trimValue(formData.get('destination'))
+    const dateOfBooking = trimValue(formData.get('dateOfBooking'))
+
+    const errors = validateContactFields(
+      {
+        name: customerName,
+        email,
+        phone: trimValue(formData.get('phone')),
+        countryCode,
+        nationality,
+        phoneRequired: true,
+      },
+      locale,
+    )
+    setError(
+      errors,
+      'destination',
+      destination.trim()
+        ? destination.trim().length > 255
+          ? validationMessage('maxValue', locale)
+          : null
+        : validationMessage('required', locale),
+    )
+    setError(errors, 'dateOfBooking', validateDate(dateOfBooking, locale, { required: true }))
+
+    if (hasErrors(errors)) {
+      setFieldErrors(errors)
+      setFormError(firstErrorMessage(errors, locale))
+      return
+    }
+
+    setFieldErrors({})
+    setLoading(true)
+
     const payload = {
       type: 'transportation',
       referenceId: item.id,
@@ -91,13 +141,12 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
         capacity: item.capacity,
         vehicleType: locale === 'ar' ? item.vehicle_type_ar || item.vehicle_type : item.vehicle_type || item.vehicle_type_ar,
       },
-      name: formData.get('name')?.toString() ?? '',
-      email: formData.get('email')?.toString() ?? '',
-      nationality: formData.get('nationality')?.toString() ?? '',
-      phone: fullPhone,
-      message: destination || dateOfBooking
-        ? `Destination: ${destination || '—'}, Date of booking: ${dateOfBooking || '—'}`
-        : 'Transportation booking request',
+      name: customerName,
+      email,
+      nationality: nationality || undefined,
+      countryCode,
+      phone: `${countryCode} ${phone}`,
+      message: `Destination: ${destination}, Date of booking: ${dateOfBooking}`,
       locale,
     }
     try {
@@ -106,12 +155,15 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Request failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Request failed')
+      }
       setSubmitted(true)
       form.reset()
     } catch (err) {
       console.error(err)
-      setError(
+      setFormError(
         locale === 'ar'
           ? 'حدث خطأ أثناء الإرسال. حاول مرة أخرى.'
           : 'Something went wrong. Please try again.',
@@ -415,6 +467,7 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
               </p>
               <form
                 onSubmit={handleInquirySubmit}
+                noValidate
                 className={cn('space-y-4', isRTL && 'text-right')}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -426,9 +479,15 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                       id="trans-name"
                       name="name"
                       required
+                      maxLength={100}
+                      autoComplete="name"
+                      aria-invalid={Boolean(fieldErrors.name)}
                       placeholder={t('contact.form.name')}
+                      className={fieldInvalidClass(Boolean(fieldErrors.name))}
                       dir={isRTL ? 'rtl' : 'ltr'}
+                      onInput={handleLettersOnlyInput}
                     />
+                    <FieldError message={fieldErrors.name} isRTL={isRTL} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="trans-email" className="text-foreground">
@@ -439,9 +498,15 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                       name="email"
                       type="email"
                       required
+                      maxLength={255}
+                      autoComplete="email"
+                      inputMode="email"
+                      aria-invalid={Boolean(fieldErrors.email)}
                       placeholder={t('contact.form.email')}
+                      className={fieldInvalidClass(Boolean(fieldErrors.email))}
                       dir={isRTL ? 'rtl' : 'ltr'}
                     />
+                    <FieldError message={fieldErrors.email} isRTL={isRTL} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -458,19 +523,33 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                       id="trans-countryCode"
                       name="countryCode"
                       type="tel"
+                      required
+                      defaultValue="+966"
+                      inputMode="tel"
+                      pattern="\+\d{1,4}"
+                      maxLength={5}
                       placeholder="+966"
-                      className="w-full sm:w-28"
+                      aria-invalid={Boolean(fieldErrors.countryCode)}
+                      className={cn('w-full sm:w-28', fieldInvalidClass(Boolean(fieldErrors.countryCode)))}
                       dir="ltr"
+                      onInput={handleCountryCodeInput}
                     />
                     <Input
                       id="trans-phone"
                       name="phone"
                       type="tel"
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{6,15}"
+                      maxLength={15}
                       placeholder={t('inquiry.form.phone')}
-                      className="flex-1"
+                      aria-invalid={Boolean(fieldErrors.phone)}
+                      className={cn('flex-1', fieldInvalidClass(Boolean(fieldErrors.phone)))}
                       dir="ltr"
+                      onInput={handlePhoneInput}
                     />
                   </div>
+                  <FieldError message={fieldErrors.countryCode || fieldErrors.phone} isRTL={isRTL} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -480,9 +559,14 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                     <Input
                       id="trans-nationality"
                       name="nationality"
+                      maxLength={100}
+                      aria-invalid={Boolean(fieldErrors.nationality)}
                       placeholder={t('inquiry.form.nationality')}
+                      className={fieldInvalidClass(Boolean(fieldErrors.nationality))}
                       dir={isRTL ? 'rtl' : 'ltr'}
+                      onInput={handleLettersOnlyInput}
                     />
+                    <FieldError message={fieldErrors.nationality} isRTL={isRTL} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="trans-destination" className="text-foreground">
@@ -491,9 +575,14 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                     <Input
                       id="trans-destination"
                       name="destination"
+                      required
+                      maxLength={255}
+                      aria-invalid={Boolean(fieldErrors.destination)}
                       placeholder={t('inquiry.form.destination')}
+                      className={fieldInvalidClass(Boolean(fieldErrors.destination))}
                       dir={isRTL ? 'rtl' : 'ltr'}
                     />
+                    <FieldError message={fieldErrors.destination} isRTL={isRTL} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -504,9 +593,13 @@ export function TransportationDetailClient({ item }: TransportationDetailClientP
                     id="trans-dateOfBooking"
                     name="dateOfBooking"
                     type="date"
+                    required
                     min={todayIso}
+                    aria-invalid={Boolean(fieldErrors.dateOfBooking)}
+                    className={fieldInvalidClass(Boolean(fieldErrors.dateOfBooking))}
                     dir="ltr"
                   />
+                  <FieldError message={fieldErrors.dateOfBooking} isRTL={isRTL} />
                 </div>
                 {error && (
                   <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

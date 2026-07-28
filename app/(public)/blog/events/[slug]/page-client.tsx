@@ -8,11 +8,27 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { FieldError, fieldInvalidClass } from '@/components/ui/field-error'
 import { useI18n, getLocalizedContent } from '@/lib/i18n'
 import type { Event } from '@/lib/db'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  trimValue,
+  digitsOnly,
+  validateContactFields,
+  validateInteger,
+  validateMessage,
+  handlePhoneInput,
+  handleCountryCodeInput,
+  handleLettersOnlyInput,
+  handleIntegerInput,
+  type FieldErrors,
+} from '@/lib/form-validation'
 
 interface EventDetailClientProps {
   event: Event
@@ -40,7 +56,8 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
   const { t, locale, isRTL } = useI18n()
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
   const title = getLocalizedContent(
     evt as unknown as Record<string, unknown>,
@@ -72,15 +89,48 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
   const handleInquirySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
-    setError(null)
+    setFormError(null)
+    setSubmitted(false)
+
     const form = e.currentTarget
     const formData = new FormData(form)
-    const countryCode = (formData.get('countryCode')?.toString() ?? '').trim()
-    const phone = (formData.get('phone')?.toString() ?? '').trim()
-    const fullPhone =
-      countryCode || phone ? [countryCode, phone].filter(Boolean).join(' ') : undefined
-    const attendees = formData.get('attendees')?.toString() ?? ''
+    const countryCode = trimValue(formData.get('countryCode')) || '+966'
+    const phone = digitsOnly(trimValue(formData.get('phone')))
+    const customerName = trimValue(formData.get('name'))
+    const email = trimValue(formData.get('email'))
+    const nationality = trimValue(formData.get('nationality'))
+    const attendees = trimValue(formData.get('attendees'))
+    const message = trimValue(formData.get('message'))
+    const maxAttendees =
+      evt.max_attendees != null && evt.max_attendees > 0 ? evt.max_attendees : 500
+
+    const errors = validateContactFields(
+      {
+        name: customerName,
+        email,
+        phone: trimValue(formData.get('phone')),
+        countryCode,
+        nationality,
+        phoneRequired: true,
+      },
+      locale,
+    )
+    setError(
+      errors,
+      'attendees',
+      validateInteger(attendees, locale, { min: 1, max: maxAttendees }),
+    )
+    setError(errors, 'message', validateMessage(message, locale, false))
+
+    if (hasErrors(errors)) {
+      setFieldErrors(errors)
+      setFormError(firstErrorMessage(errors, locale))
+      return
+    }
+
+    setFieldErrors({})
+    setLoading(true)
+
     const payload = {
       type: 'event',
       referenceId: evt.id,
@@ -94,11 +144,12 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
         price: evt.price,
         currency: evt.currency,
       },
-      name: formData.get('name')?.toString() ?? '',
-      email: formData.get('email')?.toString() ?? '',
-      nationality: formData.get('nationality')?.toString() ?? '',
-      phone: fullPhone,
-      message: formData.get('message')?.toString()?.trim() || 'Event registration / inquiry',
+      name: customerName,
+      email,
+      nationality: nationality || undefined,
+      countryCode,
+      phone: `${countryCode} ${phone}`,
+      message: message || 'Event registration / inquiry',
       locale,
     }
     try {
@@ -107,12 +158,15 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error('Request failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Request failed')
+      }
       setSubmitted(true)
       form.reset()
     } catch (err) {
       console.error(err)
-      setError(
+      setFormError(
         locale === 'ar'
           ? 'حدث خطأ أثناء الإرسال. حاول مرة أخرى.'
           : 'Something went wrong. Please try again.',
@@ -235,6 +289,7 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
           </p>
           <form
             onSubmit={handleInquirySubmit}
+            noValidate
             className={cn('space-y-4', isRTL && 'text-right')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -246,9 +301,15 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                   id="evt-name"
                   name="name"
                   required
+                  maxLength={100}
+                  autoComplete="name"
+                  aria-invalid={Boolean(fieldErrors.name)}
                   placeholder={t('contact.form.name')}
+                  className={fieldInvalidClass(Boolean(fieldErrors.name))}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  onInput={handleLettersOnlyInput}
                 />
+                <FieldError message={fieldErrors.name} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="evt-email" className="text-foreground">
@@ -259,9 +320,15 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                   name="email"
                   type="email"
                   required
+                  maxLength={255}
+                  autoComplete="email"
+                  inputMode="email"
+                  aria-invalid={Boolean(fieldErrors.email)}
                   placeholder={t('contact.form.email')}
+                  className={fieldInvalidClass(Boolean(fieldErrors.email))}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
+                <FieldError message={fieldErrors.email} isRTL={isRTL} />
               </div>
             </div>
             <div className="space-y-2">
@@ -278,19 +345,33 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                   id="evt-countryCode"
                   name="countryCode"
                   type="tel"
+                  required
+                  defaultValue="+966"
+                  inputMode="tel"
+                  pattern="\+\d{1,4}"
+                  maxLength={5}
                   placeholder="+966"
-                  className="w-full sm:w-28"
+                  aria-invalid={Boolean(fieldErrors.countryCode)}
+                  className={cn('w-full sm:w-28', fieldInvalidClass(Boolean(fieldErrors.countryCode)))}
                   dir="ltr"
+                  onInput={handleCountryCodeInput}
                 />
                 <Input
                   id="evt-phone"
                   name="phone"
                   type="tel"
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{6,15}"
+                  maxLength={15}
                   placeholder={t('inquiry.form.phone')}
-                  className="flex-1"
+                  aria-invalid={Boolean(fieldErrors.phone)}
+                  className={cn('flex-1', fieldInvalidClass(Boolean(fieldErrors.phone)))}
                   dir="ltr"
+                  onInput={handlePhoneInput}
                 />
               </div>
+              <FieldError message={fieldErrors.countryCode || fieldErrors.phone} isRTL={isRTL} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -300,9 +381,14 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                 <Input
                   id="evt-nationality"
                   name="nationality"
+                  maxLength={100}
+                  aria-invalid={Boolean(fieldErrors.nationality)}
                   placeholder={t('inquiry.form.nationality')}
+                  className={fieldInvalidClass(Boolean(fieldErrors.nationality))}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  onInput={handleLettersOnlyInput}
                 />
+                <FieldError message={fieldErrors.nationality} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="evt-attendees" className="text-foreground">
@@ -311,11 +397,17 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                 <Input
                   id="evt-attendees"
                   name="attendees"
-                  type="number"
-                  min={1}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={3}
+                  aria-invalid={Boolean(fieldErrors.attendees)}
                   placeholder={locale === 'ar' ? 'مثال: 2' : 'e.g. 2'}
+                  className={fieldInvalidClass(Boolean(fieldErrors.attendees))}
                   dir="ltr"
+                  onInput={handleIntegerInput}
                 />
+                <FieldError message={fieldErrors.attendees} isRTL={isRTL} />
               </div>
             </div>
             <div className="space-y-2">
@@ -326,9 +418,13 @@ export function EventDetailClient({ event: evt }: EventDetailClientProps) {
                 id="evt-message"
                 name="message"
                 rows={3}
+                maxLength={5000}
+                aria-invalid={Boolean(fieldErrors.message)}
                 placeholder={t('contact.form.message')}
+                className={fieldInvalidClass(Boolean(fieldErrors.message))}
                 dir={isRTL ? 'rtl' : 'ltr'}
               />
+              <FieldError message={fieldErrors.message} isRTL={isRTL} />
             </div>
             {error && (
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

@@ -9,7 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FieldError, fieldInvalidClass } from "@/components/ui/field-error";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  trimValue,
+  digitsOnly,
+  validateContactFields,
+  validateMessage,
+  validateSubject,
+  handlePhoneInput,
+  handleCountryCodeInput,
+  handleLettersOnlyInput,
+  type FieldErrors,
+} from "@/lib/form-validation";
 
 const ACCENT = "#4a1c20";
 const easeOutExpo = [0.16, 1, 0.3, 1] as const;
@@ -46,27 +61,58 @@ export function ContactFormSection() {
   const [sectionRef, isVisible] = useScrollAnimation<HTMLElement>(0.08);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (loading) return;
-    setLoading(true);
-    setError(null);
+    setFormError(null);
+    setSubmitted(false);
+
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const countryCode = (formData.get("countryCode")?.toString() ?? "").trim() || "+966";
-    const phone = (formData.get("phone")?.toString() ?? "").trim();
-    const fullPhone = countryCode && phone ? `${countryCode} ${phone}` : countryCode || phone || undefined;
+    const countryCode = trimValue(formData.get("countryCode")) || "+966";
+    const phone = digitsOnly(trimValue(formData.get("phone")));
+    const name = trimValue(formData.get("name"));
+    const email = trimValue(formData.get("email"));
+    const nationality = trimValue(formData.get("nationality"));
+    const subject = trimValue(formData.get("subject"));
+    const message = trimValue(formData.get("message"));
+
+    const errors = validateContactFields(
+      {
+        name,
+        email,
+        phone: trimValue(formData.get("phone")),
+        countryCode,
+        nationality,
+        phoneRequired: true,
+      },
+      locale,
+    );
+    setError(errors, "subject", validateSubject(subject, locale));
+    setError(errors, "message", validateMessage(message, locale));
+
+    if (hasErrors(errors)) {
+      setFieldErrors(errors);
+      setFormError(firstErrorMessage(errors, locale));
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+    const fullPhone = `${countryCode} ${phone}`;
     const payload = {
       type: "contact",
       referenceId: "contact",
-      referenceName: (formData.get("subject")?.toString() ?? "").trim() || "Contact Form",
-      name: (formData.get("name")?.toString() ?? "").trim(),
-      email: (formData.get("email")?.toString() ?? "").trim(),
-      nationality: (formData.get("nationality")?.toString() ?? "").trim() || undefined,
+      referenceName: subject || "Contact Form",
+      name,
+      email,
+      nationality: nationality || undefined,
+      countryCode,
       phone: fullPhone,
-      message: (formData.get("message")?.toString() ?? "").trim(),
+      message,
       locale,
     };
     try {
@@ -75,14 +121,17 @@ export function ContactFormSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Request failed");
+      }
       setSubmitted(true);
       form.reset();
       const countryInput = form.querySelector<HTMLInputElement>('[name="countryCode"]');
       if (countryInput) countryInput.value = "+966";
     } catch (err) {
       console.error(err);
-      setError(
+      setFormError(
         locale === "ar"
           ? "حدث خطأ أثناء الإرسال. حاول مرة أخرى."
           : "Something went wrong. Please try again.",
@@ -127,6 +176,7 @@ export function ContactFormSection() {
             >
               <form
                 onSubmit={handleSubmit}
+                noValidate
                 className={cn(
                   "rounded-xl sm:rounded-2xl border border-border/60 bg-muted/30 p-4 sm:p-6 md:p-8 transition-shadow duration-300 hover:shadow-md focus-within:shadow-md",
                   isRTL && "text-right",
@@ -142,10 +192,18 @@ export function ContactFormSection() {
                       name="name"
                       type="text"
                       required
+                      maxLength={100}
+                      autoComplete="name"
+                      aria-invalid={Boolean(fieldErrors.name)}
                       placeholder={t("contact.form.name")}
-                      className="bg-background transition-[box-shadow] duration-200"
+                      className={cn(
+                        "bg-background transition-[box-shadow] duration-200",
+                        fieldInvalidClass(Boolean(fieldErrors.name)),
+                      )}
                       dir={isRTL ? "rtl" : "ltr"}
+                      onInput={handleLettersOnlyInput}
                     />
+                    <FieldError message={fieldErrors.name} isRTL={isRTL} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="contact-email" className="text-foreground">
@@ -156,10 +214,18 @@ export function ContactFormSection() {
                       name="email"
                       type="email"
                       required
+                      maxLength={255}
+                      autoComplete="email"
+                      inputMode="email"
+                      aria-invalid={Boolean(fieldErrors.email)}
                       placeholder={t("contact.form.email")}
-                      className="bg-background transition-[box-shadow] duration-200"
+                      className={cn(
+                        "bg-background transition-[box-shadow] duration-200",
+                        fieldInvalidClass(Boolean(fieldErrors.email)),
+                      )}
                       dir={isRTL ? "rtl" : "ltr"}
                     />
+                    <FieldError message={fieldErrors.email} isRTL={isRTL} />
                   </div>
                 </div>
                 <div className="space-y-2 mb-3 sm:mb-4">
@@ -170,30 +236,44 @@ export function ContactFormSection() {
                       className={cn(
                         "flex gap-0 rounded-lg border border-input bg-background overflow-hidden transition-[box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
                         isRTL && "flex-row-reverse",
+                        (fieldErrors.phone || fieldErrors.countryCode) && "border-red-500",
                       )}
                     >
                       <Input
                         id="contact-countryCode"
                         name="countryCode"
                         type="tel"
+                        required
                         defaultValue="+966"
+                        inputMode="tel"
+                        pattern="\+\d{1,4}"
+                        maxLength={5}
                         className={cn(
                           "w-20 sm:w-24 shrink-0 rounded-none border-0 bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0",
                           isRTL ? "border-l border-input" : "border-r border-input",
                         )}
                         dir="ltr"
+                        aria-invalid={Boolean(fieldErrors.countryCode)}
                         aria-label={t("inquiry.form.countryCode")}
+                        onInput={handleCountryCodeInput}
                       />
                       <Input
                         id="contact-phone"
                         name="phone"
                         type="tel"
+                        required
+                        inputMode="numeric"
+                        pattern="[0-9]{6,15}"
+                        maxLength={15}
                         placeholder={t("contact.form.phone")}
                         className="flex-1 min-w-0 rounded-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                         dir="ltr"
+                        aria-invalid={Boolean(fieldErrors.phone)}
                         aria-label={t("contact.form.phone")}
+                        onInput={handlePhoneInput}
                       />
                     </div>
+                    <FieldError message={fieldErrors.countryCode || fieldErrors.phone} isRTL={isRTL} />
                   </div>
                 <div className="space-y-2 mb-3 sm:mb-4">
                     <Label htmlFor="contact-nationality" className="text-foreground">
@@ -203,10 +283,17 @@ export function ContactFormSection() {
                       id="contact-nationality"
                       name="nationality"
                       type="text"
+                      maxLength={100}
+                      aria-invalid={Boolean(fieldErrors.nationality)}
                       placeholder={t("inquiry.form.nationality")}
-                      className="bg-background transition-[box-shadow] duration-200"
+                      className={cn(
+                        "bg-background transition-[box-shadow] duration-200",
+                        fieldInvalidClass(Boolean(fieldErrors.nationality)),
+                      )}
                       dir={isRTL ? "rtl" : "ltr"}
+                      onInput={handleLettersOnlyInput}
                     />
+                    <FieldError message={fieldErrors.nationality} isRTL={isRTL} />
                   </div>
                 <div className="space-y-2 mb-3 sm:mb-4">
                     <Label htmlFor="contact-subject" className="text-foreground">
@@ -217,10 +304,16 @@ export function ContactFormSection() {
                       name="subject"
                       type="text"
                       required
+                      maxLength={255}
+                      aria-invalid={Boolean(fieldErrors.subject)}
                       placeholder={t("contact.form.subject")}
-                      className="bg-background transition-[box-shadow] duration-200"
+                      className={cn(
+                        "bg-background transition-[box-shadow] duration-200",
+                        fieldInvalidClass(Boolean(fieldErrors.subject)),
+                      )}
                       dir={isRTL ? "rtl" : "ltr"}
                     />
+                    <FieldError message={fieldErrors.subject} isRTL={isRTL} />
                   </div>
                 <div className="space-y-2 mb-4 sm:mb-6">
                   <Label htmlFor="contact-message" className="text-foreground">
@@ -231,10 +324,16 @@ export function ContactFormSection() {
                     name="message"
                     required
                     rows={4}
+                    maxLength={5000}
+                    aria-invalid={Boolean(fieldErrors.message)}
                     placeholder={t("contact.form.message")}
-                    className="bg-background resize-none transition-[box-shadow] duration-200"
+                    className={cn(
+                      "bg-background resize-none transition-[box-shadow] duration-200",
+                      fieldInvalidClass(Boolean(fieldErrors.message)),
+                    )}
                     dir={isRTL ? "rtl" : "ltr"}
                   />
+                  <FieldError message={fieldErrors.message} isRTL={isRTL} />
                 </div>
                 {error && (
                   <p className="text-sm text-red-600 dark:text-red-400 mb-4" style={isRTL ? { textAlign: "right" } : undefined}>

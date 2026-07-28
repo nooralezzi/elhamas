@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  digitsOnly,
+  normalizeCountryCode,
+  validateContactFields,
+  validateMessage,
+  type ValidationLocale,
+} from '@/lib/form-validation'
 
 interface InquiryPayload {
   type: string
@@ -17,6 +29,22 @@ interface InquiryPayload {
   locale?: string
 }
 
+function extractPhoneNumber(phone?: string, countryCode?: string): string {
+  const raw = (phone || '').trim()
+  const code = (countryCode || '').trim()
+  if (!raw) return ''
+  // Prefer digits-only local number if already clean
+  if (/^\d+$/.test(raw)) return raw
+  if (code && raw.startsWith(code)) {
+    return raw.slice(code.length).replace(/\D/g, '')
+  }
+  const parts = raw.split(/\s+/)
+  if (parts.length > 1 && parts[0].startsWith('+')) {
+    return parts.slice(1).join('').replace(/\D/g, '')
+  }
+  return raw.replace(/\D/g, '')
+}
+
 export async function POST(req: NextRequest) {
   let body: InquiryPayload
 
@@ -26,10 +54,81 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  if (!body.name || !body.email || !body.message) {
+  const locale: ValidationLocale = body.locale === 'ar' ? 'ar' : 'en'
+  const name = (body.name || '').trim()
+  const email = (body.email || '').trim()
+  const message = (body.message || '').trim()
+  const nationality = (body.nationality || '').trim()
+  const countryCode = normalizeCountryCode(
+    (body.countryCode || '').trim() ||
+      ((body.phone || '').trim().startsWith('+')
+        ? (body.phone || '').trim().split(/\s+/)[0]
+        : '+966'),
+  )
+  const phoneNumber = digitsOnly(extractPhoneNumber(body.phone, body.countryCode))
+
+  const errors = validateContactFields(
+    {
+      name,
+      email,
+      phone: phoneNumber,
+      countryCode: countryCode === '+' ? '' : countryCode,
+      nationality,
+      phoneRequired: true,
+    },
+    locale,
+  )
+  setError(errors, 'message', validateMessage(message, locale, true, 5))
+
+  if (hasErrors(errors)) {
     return NextResponse.json(
-      { error: 'Missing required fields' },
+      {
+        error: firstErrorMessage(errors, locale),
+        fieldErrors: errors,
+      },
       { status: 400 },
+    )
+  }
+
+  const inquiryType = (body.type || 'contact').trim().slice(0, 50) || 'contact'
+  const referenceName =
+    (body.referenceName || '').trim().slice(0, 255) || 'Inquiry'
+  const metaValue =
+    body.meta && Object.keys(body.meta).length > 0
+      ? (body.meta as Prisma.InputJsonValue)
+      : Prisma.JsonNull
+
+  const resolvedCountryCode = countryCode === '+' ? null : countryCode
+  const resolvedPhone = resolvedCountryCode
+    ? `${resolvedCountryCode} ${phoneNumber}`
+    : phoneNumber || null
+
+  try {
+    await prisma.contactInquiry.create({
+      data: {
+        name: name.slice(0, 255),
+        email: email.slice(0, 255),
+        phone: resolvedPhone?.slice(0, 50) || null,
+        nationality: nationality.slice(0, 100) || null,
+        countryCode: resolvedCountryCode?.slice(0, 20) || null,
+        travelers: body.travelers?.trim().slice(0, 50) || null,
+        subject: referenceName,
+        message,
+        inquiryType,
+        referenceId: body.referenceId?.trim().slice(0, 255) || null,
+        referenceName,
+        referenceSummary: body.referenceSummary?.trim() || null,
+        meta: metaValue,
+        locale: locale.slice(0, 10),
+        status: 'new',
+        isRead: false,
+      },
+    })
+  } catch (err) {
+    console.error('Failed to save contact inquiry', err)
+    return NextResponse.json(
+      { error: 'Failed to save inquiry' },
+      { status: 500 },
     )
   }
 
@@ -42,10 +141,8 @@ export async function POST(req: NextRequest) {
 
   if (!user || !pass || !companyEmail || !from) {
     console.error('Email environment variables are not fully configured')
-    return NextResponse.json(
-      { error: 'Email service is not configured on the server.' },
-      { status: 500 },
-    )
+    // Inquiry already saved for admin; do not fail the form submit.
+    return NextResponse.json({ ok: true, emailSent: false })
   }
 
   const transporter = nodemailer.createTransport({
@@ -228,10 +325,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('Failed to send inquiry emails', err)
-    return NextResponse.json(
-      { error: 'Failed to send emails' },
-      { status: 500 },
-    )
+    // Inquiry is already saved; treat as success so the user is not blocked.
+    return NextResponse.json({ ok: true, emailSent: false })
   }
 }
 

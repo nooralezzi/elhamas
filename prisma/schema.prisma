@@ -280,18 +280,29 @@ model BlogPost {
 }
 
 model ContactInquiry {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @db.VarChar(255)
-  email       String   @db.VarChar(255)
-  phone       String?  @db.VarChar(50)
-  subject     String?  @db.VarChar(255)
-  message     String   @db.Text
-  inquiryType String?  @map("inquiry_type") @db.VarChar(50)
-  status      String   @default("new") @db.VarChar(50)
-  isRead      Boolean  @default(false) @map("is_read") @db.Boolean
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String   @db.VarChar(255)
+  email            String   @db.VarChar(255)
+  phone            String?  @db.VarChar(50)
+  nationality      String?  @db.VarChar(100)
+  countryCode      String?  @map("country_code") @db.VarChar(20)
+  travelers        String?  @db.VarChar(50)
+  subject          String?  @db.VarChar(255)
+  message          String   @db.Text
+  inquiryType      String?  @map("inquiry_type") @db.VarChar(50)
+  referenceId      String?  @map("reference_id") @db.VarChar(255)
+  referenceName    String?  @map("reference_name") @db.VarChar(255)
+  referenceSummary String?  @map("reference_summary") @db.Text
+  meta             Json?
+  locale           String?  @db.VarChar(10)
+  status           String   @default("new") @db.VarChar(50)
+  isRead           Boolean  @default(false) @map("is_read") @db.Boolean
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+  @@index([isRead])
   @@map("contact_inquiries")
 }
 

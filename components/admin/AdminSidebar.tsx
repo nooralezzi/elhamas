@@ -12,6 +12,7 @@ import {
   Stamp,
   FileText,
   MessageSquare,
+  Inbox,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -26,6 +27,7 @@ import type { AdminUserSession } from '@/lib/auth'
 
 const nav = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/inquiries', label: 'Inquiries', icon: Inbox },
   { href: '/admin/hotels', label: 'Hotels', icon: Hotel },
   { href: '/admin/packages', label: 'Packages', icon: Package },
   { href: '/admin/categories', label: 'Package Categories', icon: FolderOpen },

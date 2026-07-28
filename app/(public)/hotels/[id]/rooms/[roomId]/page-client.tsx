@@ -21,6 +21,26 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { FieldError, fieldInvalidClass } from '@/components/ui/field-error'
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  trimValue,
+  digitsOnly,
+  validateContactFields,
+  validateDate,
+  validateDateOrder,
+  validateInteger,
+  validateMessage,
+  validateYesNo,
+  validationMessage,
+  handlePhoneInput,
+  handleCountryCodeInput,
+  handleLettersOnlyInput,
+  handleIntegerInput,
+  type FieldErrors,
+} from '@/lib/form-validation'
 
 function amenityIcon(amenity: string) {
   const a = amenity.toLowerCase()
@@ -47,7 +67,8 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
   const { t, locale, isRTL } = useI18n()
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [todayIso, setTodayIso] = useState<string | undefined>()
 
   useEffect(() => {
@@ -95,23 +116,66 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
-    setError(null)
+    setFormError(null)
+    setSubmitted(false)
 
     const form = e.currentTarget
     const formData = new FormData(form)
 
-    const checkIn = formData.get('checkIn')?.toString() ?? ''
-    const checkOut = formData.get('checkOut')?.toString() ?? ''
-    const adults = formData.get('adults')?.toString() ?? ''
-    const children = formData.get('children')?.toString() ?? ''
-    const countryCode = (formData.get('countryCode')?.toString() ?? '').trim()
-    const phone = (formData.get('phone')?.toString() ?? '').trim()
-    const fullPhone =
-      countryCode || phone ? [countryCode, phone].filter(Boolean).join(' ') : undefined
-  const needVisa = formData.get('needVisa')?.toString() ?? ''
-  const bookedFlight = formData.get('bookedFlight')?.toString() ?? ''
-  const needTransport = formData.get('needTransport')?.toString() ?? ''
+    const checkIn = trimValue(formData.get('checkIn'))
+    const checkOut = trimValue(formData.get('checkOut'))
+    const adults = trimValue(formData.get('adults'))
+    const children = trimValue(formData.get('children'))
+    const countryCode = trimValue(formData.get('countryCode')) || '+966'
+    const phone = digitsOnly(trimValue(formData.get('phone')))
+    const customerName = trimValue(formData.get('name'))
+    const email = trimValue(formData.get('email'))
+    const nationality = trimValue(formData.get('nationality'))
+    const message = trimValue(formData.get('message'))
+    const needVisa = trimValue(formData.get('needVisa'))
+    const bookedFlight = trimValue(formData.get('bookedFlight'))
+    const needTransport = trimValue(formData.get('needTransport'))
+    const maxGuests = room.max_guests || 10
+
+    const errors = validateContactFields(
+      {
+        name: customerName,
+        email,
+        phone: trimValue(formData.get('phone')),
+        countryCode,
+        nationality,
+        phoneRequired: true,
+      },
+      locale,
+    )
+    setError(errors, 'checkIn', validateDate(checkIn, locale, { required: true }))
+    setError(errors, 'checkOut', validateDate(checkOut, locale, { required: true }))
+    setError(errors, 'checkOut', errors.checkOut || validateDateOrder(checkIn, checkOut, locale))
+    setError(errors, 'adults', validateInteger(adults, locale, { required: true, min: 1, max: maxGuests }))
+    setError(errors, 'children', validateInteger(children, locale, { min: 0, max: maxGuests }))
+    setError(errors, 'message', validateMessage(message, locale, false))
+    setError(errors, 'needVisa', validateYesNo(needVisa, locale))
+    setError(errors, 'bookedFlight', validateYesNo(bookedFlight, locale))
+    setError(errors, 'needTransport', validateYesNo(needTransport, locale))
+
+    const adultsN = Number(adults || 0)
+    const childrenN = Number(children || 0)
+    if (
+      Number.isFinite(adultsN) &&
+      Number.isFinite(childrenN) &&
+      adultsN + childrenN > maxGuests
+    ) {
+      setError(errors, 'adults', validationMessage('guestsOverCapacity', locale))
+    }
+
+    if (hasErrors(errors)) {
+      setFieldErrors(errors)
+      setFormError(firstErrorMessage(errors, locale))
+      return
+    }
+
+    setFieldErrors({})
+    setLoading(true)
 
     const payload = {
       type: 'hotel_room',
@@ -132,12 +196,15 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
         bookedFlight,
         needTransport,
       },
-      name: formData.get('name')?.toString() ?? '',
-      email: formData.get('email')?.toString() ?? '',
-      nationality: formData.get('nationality')?.toString() ?? '',
-      phone: fullPhone,
+      name: customerName,
+      email,
+      nationality: nationality || undefined,
+      countryCode,
+      phone: `${countryCode} ${phone}`,
       travelers: adults,
-      message: formData.get('message')?.toString() ?? '',
+      message:
+        message ||
+        `Check-in: ${checkIn}, Check-out: ${checkOut}, Adults: ${adults}, Children: ${children || 0}`,
       locale,
     }
 
@@ -149,14 +216,15 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
       })
 
       if (!res.ok) {
-        throw new Error('Request failed')
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Request failed')
       }
 
       setSubmitted(true)
       form.reset()
     } catch (err) {
       console.error(err)
-      setError(
+      setFormError(
         locale === 'ar'
           ? 'حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى لاحقاً.'
           : 'Something went wrong while sending your request. Please try again.',
@@ -338,6 +406,7 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
 
                 <form
             onSubmit={handleSubmit}
+            noValidate
             className={cn('space-y-4', isRTL && 'text-right')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -351,8 +420,11 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                   type="date"
                   required
                   min={todayIso}
+                  aria-invalid={Boolean(fieldErrors.checkIn)}
+                  className={fieldInvalidClass(Boolean(fieldErrors.checkIn))}
                   dir="ltr"
                 />
+                <FieldError message={fieldErrors.checkIn} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="checkOut">
@@ -364,8 +436,11 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                   type="date"
                   required
                   min={todayIso}
+                  aria-invalid={Boolean(fieldErrors.checkOut)}
+                  className={fieldInvalidClass(Boolean(fieldErrors.checkOut))}
                   dir="ltr"
                 />
+                <FieldError message={fieldErrors.checkOut} isRTL={isRTL} />
               </div>
             </div>
 
@@ -377,23 +452,36 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                 <Input
                   id="adults"
                   name="adults"
-                  type="number"
-                  min={1}
-                  defaultValue={room.max_guests || 2}
+                  type="text"
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  defaultValue={String(Math.min(2, room.max_guests || 2))}
+                  aria-invalid={Boolean(fieldErrors.adults)}
+                  className={fieldInvalidClass(Boolean(fieldErrors.adults))}
                   dir="ltr"
+                  onInput={handleIntegerInput}
                 />
+                <FieldError message={fieldErrors.adults} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="children">
-                  {locale === 'ar' ? 'عدد الاطفال)' : 'Children'}
+                  {locale === 'ar' ? 'عدد الأطفال' : 'Children'}
                 </Label>
                 <Input
                   id="children"
                   name="children"
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  aria-invalid={Boolean(fieldErrors.children)}
+                  className={fieldInvalidClass(Boolean(fieldErrors.children))}
                   dir="ltr"
+                  onInput={handleIntegerInput}
                 />
+                <FieldError message={fieldErrors.children} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nationality">
@@ -402,9 +490,14 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                 <Input
                   id="nationality"
                   name="nationality"
+                  maxLength={100}
+                  aria-invalid={Boolean(fieldErrors.nationality)}
                   placeholder={locale === 'ar' ? 'الجنسية' : 'Nationality'}
+                  className={fieldInvalidClass(Boolean(fieldErrors.nationality))}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  onInput={handleLettersOnlyInput}
                 />
+                <FieldError message={fieldErrors.nationality} isRTL={isRTL} />
               </div>
             </div>
 
@@ -417,9 +510,15 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                   id="name"
                   name="name"
                   required
+                  maxLength={100}
+                  autoComplete="name"
+                  aria-invalid={Boolean(fieldErrors.name)}
                   placeholder={t('contact.form.name')}
+                  className={fieldInvalidClass(Boolean(fieldErrors.name))}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  onInput={handleLettersOnlyInput}
                 />
+                <FieldError message={fieldErrors.name} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">
@@ -430,9 +529,15 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                   name="email"
                   type="email"
                   required
+                  maxLength={255}
+                  autoComplete="email"
+                  inputMode="email"
+                  aria-invalid={Boolean(fieldErrors.email)}
                   placeholder={t('contact.form.email')}
+                  className={fieldInvalidClass(Boolean(fieldErrors.email))}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
+                <FieldError message={fieldErrors.email} isRTL={isRTL} />
               </div>
             </div>
 
@@ -450,19 +555,33 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                   id="countryCode"
                   name="countryCode"
                   type="tel"
+                  required
+                  defaultValue="+966"
+                  inputMode="tel"
+                  pattern="\+\d{1,4}"
+                  maxLength={5}
                   placeholder="+966"
-                  className="w-full sm:w-28"
+                  aria-invalid={Boolean(fieldErrors.countryCode)}
+                  className={cn('w-full sm:w-28', fieldInvalidClass(Boolean(fieldErrors.countryCode)))}
                   dir="ltr"
+                  onInput={handleCountryCodeInput}
                 />
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{6,15}"
+                  maxLength={15}
                   placeholder={locale === 'ar' ? 'رقم الهاتف' : 'Phone'}
-                  className="flex-1"
+                  aria-invalid={Boolean(fieldErrors.phone)}
+                  className={cn('flex-1', fieldInvalidClass(Boolean(fieldErrors.phone)))}
                   dir="ltr"
+                  onInput={handlePhoneInput}
                 />
               </div>
+              <FieldError message={fieldErrors.countryCode || fieldErrors.phone} isRTL={isRTL} />
             </div>
 
             <div className="space-y-2">
@@ -473,13 +592,17 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                 id="message"
                 name="message"
                 rows={4}
+                maxLength={5000}
+                aria-invalid={Boolean(fieldErrors.message)}
                 placeholder={
                   locale === 'ar'
                     ? 'أخبرنا بأي ملاحظات إضافية حول مواعيد الوصول أو نوع الأسرّة وغيرها.'
                     : 'Tell us any additional details such as arrival time or bed preferences.'
                 }
+                className={fieldInvalidClass(Boolean(fieldErrors.message))}
                 dir={isRTL ? 'rtl' : 'ltr'}
               />
+              <FieldError message={fieldErrors.message} isRTL={isRTL} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -498,7 +621,6 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                       type="radio"
                       name="needVisa"
                       value="yes"
-                      required
                       className="h-4 w-4 border border-border rounded-full text-primary focus:ring-primary"
                     />
                     <span>{t('booking.yes')}</span>
@@ -513,6 +635,7 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                     <span>{t('booking.no')}</span>
                   </label>
                 </div>
+                <FieldError message={fieldErrors.needVisa} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">
@@ -529,7 +652,6 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                       type="radio"
                       name="bookedFlight"
                       value="yes"
-                      required
                       className="h-4 w-4 border border-border rounded-full text-primary focus:ring-primary"
                     />
                     <span>{t('booking.yes')}</span>
@@ -544,6 +666,7 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                     <span>{t('booking.no')}</span>
                   </label>
                 </div>
+                <FieldError message={fieldErrors.bookedFlight} isRTL={isRTL} />
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">
@@ -560,7 +683,6 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                       type="radio"
                       name="needTransport"
                       value="yes"
-                      required
                       className="h-4 w-4 border border-border rounded-full text-primary focus:ring-primary"
                     />
                     <span>{t('booking.yes')}</span>
@@ -575,6 +697,7 @@ export function RoomBookingPageClient({ hotel, room }: RoomBookingPageClientProp
                     <span>{t('booking.no')}</span>
                   </label>
                 </div>
+                <FieldError message={fieldErrors.needTransport} isRTL={isRTL} />
               </div>
             </div>
 

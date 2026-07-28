@@ -1,5 +1,6 @@
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -7,9 +8,10 @@ export default async function AdminDashboardPage() {
   const session = await getSession()
   if (!session) redirect('/admin/login')
 
-  const [inquiriesCount, bookingsCount, hotelsCount, packagesCount] =
+  const [inquiriesCount, unreadInquiries, bookingsCount, hotelsCount, packagesCount] =
     await Promise.all([
       prisma.contactInquiry.count(),
+      prisma.contactInquiry.count({ where: { isRead: false } }),
       prisma.booking.count(),
       prisma.hotel.count(),
       prisma.tourPackage.count(),
@@ -25,16 +27,23 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Contact inquiries
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{inquiriesCount}</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/inquiries" className="block transition-opacity hover:opacity-90">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Contact inquiries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold">{inquiriesCount}</p>
+              {unreadInquiries > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {unreadInquiries} unread
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -72,10 +81,8 @@ export default async function AdminDashboardPage() {
           <CardTitle>Quick start</CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground">
-          Use the sidebar to manage Site Settings, Hotels, Packages, Events,
-          Transportation, Blog, Testimonials, Inquiries, and Bookings. This is
-          a temporary dashboard; full CRUD for each section will be added in
-          the next phases.
+          Use the sidebar to manage Hotels, Packages, Events, Transportation,
+          Blog, Testimonials, and Inquiries.
         </CardContent>
       </Card>
     </div>

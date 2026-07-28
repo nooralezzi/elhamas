@@ -7,6 +7,22 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { FieldError, fieldInvalidClass } from '@/components/ui/field-error'
+import {
+  firstErrorMessage,
+  hasErrors,
+  setError,
+  trimValue,
+  digitsOnly,
+  validateContactFields,
+  validateInteger,
+  validateMessage,
+  handlePhoneInput,
+  handleCountryCodeInput,
+  handleLettersOnlyInput,
+  handleIntegerInput,
+  type FieldErrors,
+} from '@/lib/form-validation'
 
 interface InquiryFormSectionProps {
   contextType: string
@@ -27,20 +43,47 @@ export function InquiryFormSection({
   const { t, isRTL, locale } = useI18n()
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
-    setError(null)
+    setFormError(null)
+    setSubmitted(false)
 
     const formElement = e.currentTarget
     const formData = new FormData(formElement)
-    const countryCode = (formData.get('countryCode')?.toString() ?? '').trim()
-    const phone = (formData.get('phone')?.toString() ?? '').trim()
-    const fullPhone =
-      countryCode || phone ? [countryCode, phone].filter(Boolean).join(' ') : undefined
+    const countryCode = trimValue(formData.get('countryCode')) || '+966'
+    const phone = digitsOnly(trimValue(formData.get('phone')))
+    const name = trimValue(formData.get('name'))
+    const email = trimValue(formData.get('email'))
+    const nationality = trimValue(formData.get('nationality'))
+    const travelers = trimValue(formData.get('travelers'))
+    const message = trimValue(formData.get('message'))
+
+    const errors = validateContactFields(
+      {
+        name,
+        email,
+        phone: trimValue(formData.get('phone')),
+        countryCode,
+        nationality,
+        phoneRequired: true,
+      },
+      locale,
+    )
+    setError(errors, 'travelers', validateInteger(travelers, locale, { min: 1, max: 100 }))
+    setError(errors, 'message', validateMessage(message, locale))
+
+    if (hasErrors(errors)) {
+      setFieldErrors(errors)
+      setFormError(firstErrorMessage(errors, locale))
+      return
+    }
+
+    setFieldErrors({})
+    setLoading(true)
 
     const payload = {
       type: contextType,
@@ -48,13 +91,13 @@ export function InquiryFormSection({
       referenceName,
       referenceSummary,
       meta: meta ?? {},
-      name: formData.get('name')?.toString() ?? '',
-      email: formData.get('email')?.toString() ?? '',
-      nationality: formData.get('nationality')?.toString() ?? '',
-      countryCode: countryCode || undefined,
-      phone: fullPhone,
-      travelers: formData.get('travelers')?.toString() ?? '',
-      message: formData.get('message')?.toString() ?? '',
+      name,
+      email,
+      nationality: nationality || undefined,
+      countryCode,
+      phone: `${countryCode} ${phone}`,
+      travelers: travelers || undefined,
+      message,
       locale,
     }
 
@@ -66,14 +109,15 @@ export function InquiryFormSection({
       })
 
       if (!res.ok) {
-        throw new Error('Request failed')
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Request failed')
       }
 
       setSubmitted(true)
       formElement.reset()
     } catch (err) {
       console.error(err)
-      setError(
+      setFormError(
         locale === 'ar'
           ? 'حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى لاحقاً.'
           : 'Something went wrong while sending your request. Please try again.',
@@ -109,6 +153,7 @@ export function InquiryFormSection({
 
             <form
               onSubmit={handleSubmit}
+              noValidate
               className={cn('space-y-4', isRTL && 'text-right')}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -120,9 +165,15 @@ export function InquiryFormSection({
                     id="inq-name"
                     name="name"
                     required
+                    maxLength={100}
+                    autoComplete="name"
+                    aria-invalid={Boolean(fieldErrors.name)}
                     placeholder={t('contact.form.name')}
+                    className={fieldInvalidClass(Boolean(fieldErrors.name))}
                     dir={isRTL ? 'rtl' : 'ltr'}
+                    onInput={handleLettersOnlyInput}
                   />
+                  <FieldError message={fieldErrors.name} isRTL={isRTL} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="inq-email" className="text-foreground">
@@ -133,9 +184,15 @@ export function InquiryFormSection({
                     name="email"
                     type="email"
                     required
+                    maxLength={255}
+                    autoComplete="email"
+                    inputMode="email"
+                    aria-invalid={Boolean(fieldErrors.email)}
                     placeholder={t('contact.form.email')}
+                    className={fieldInvalidClass(Boolean(fieldErrors.email))}
                     dir={isRTL ? 'rtl' : 'ltr'}
                   />
+                  <FieldError message={fieldErrors.email} isRTL={isRTL} />
                 </div>
               </div>
 
@@ -147,9 +204,14 @@ export function InquiryFormSection({
                   <Input
                     id="inq-nationality"
                     name="nationality"
+                    maxLength={100}
+                    aria-invalid={Boolean(fieldErrors.nationality)}
                     placeholder={t('inquiry.form.nationality')}
+                    className={fieldInvalidClass(Boolean(fieldErrors.nationality))}
                     dir={isRTL ? 'rtl' : 'ltr'}
+                    onInput={handleLettersOnlyInput}
                   />
+                  <FieldError message={fieldErrors.nationality} isRTL={isRTL} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="inq-travelers" className="text-foreground">
@@ -160,11 +222,17 @@ export function InquiryFormSection({
                   <Input
                     id="inq-travelers"
                     name="travelers"
-                    type="number"
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={3}
+                    aria-invalid={Boolean(fieldErrors.travelers)}
                     placeholder={locale === 'ar' ? 'مثال: 3' : 'e.g. 3'}
+                    className={fieldInvalidClass(Boolean(fieldErrors.travelers))}
                     dir="ltr"
+                    onInput={handleIntegerInput}
                   />
+                  <FieldError message={fieldErrors.travelers} isRTL={isRTL} />
                 </div>
               </div>
 
@@ -182,19 +250,33 @@ export function InquiryFormSection({
                     id="inq-countryCode"
                     name="countryCode"
                     type="tel"
+                    required
+                    defaultValue="+966"
+                    inputMode="tel"
+                    pattern="\+\d{1,4}"
+                    maxLength={5}
                     placeholder="+966"
-                    className="w-full sm:w-28"
+                    aria-invalid={Boolean(fieldErrors.countryCode)}
+                    className={cn('w-full sm:w-28', fieldInvalidClass(Boolean(fieldErrors.countryCode)))}
                     dir="ltr"
+                    onInput={handleCountryCodeInput}
                   />
                   <Input
                     id="inq-phone"
                     name="phone"
                     type="tel"
+                    required
+                    inputMode="numeric"
+                    pattern="[0-9]{6,15}"
+                    maxLength={15}
                     placeholder={t('inquiry.form.phone')}
-                    className="flex-1"
+                    aria-invalid={Boolean(fieldErrors.phone)}
+                    className={cn('flex-1', fieldInvalidClass(Boolean(fieldErrors.phone)))}
                     dir="ltr"
+                    onInput={handlePhoneInput}
                   />
                 </div>
+                <FieldError message={fieldErrors.countryCode || fieldErrors.phone} isRTL={isRTL} />
               </div>
 
               <div className="space-y-2">
@@ -206,13 +288,17 @@ export function InquiryFormSection({
                   name="message"
                   required
                   rows={4}
+                  maxLength={5000}
+                  aria-invalid={Boolean(fieldErrors.message)}
                   placeholder={
                     locale === 'ar'
                       ? 'أخبرنا بالمواعيد المفضلة وأي ملاحظات إضافية.'
                       : 'Tell us about your preferred dates and any additional details.'
                   }
+                  className={fieldInvalidClass(Boolean(fieldErrors.message))}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
+                <FieldError message={fieldErrors.message} isRTL={isRTL} />
               </div>
 
               {error && (
@@ -248,4 +334,3 @@ export function InquiryFormSection({
     </section>
   )
 }
-
