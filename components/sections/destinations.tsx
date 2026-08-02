@@ -13,7 +13,7 @@ import { motion } from "framer-motion"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   Carousel,
   CarouselContent,
@@ -22,6 +22,12 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel"
+
+const HERO_VIDEOS = [
+  "/images/homepage.mp4",
+  "/images/homepage2.mp4",
+  "/images/homepage3.mp4",
+]
 
 const services = [
   {
@@ -56,6 +62,8 @@ export function DestinationsSection() {
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
+  const [videoIndex, setVideoIndex] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (!api) return
@@ -66,16 +74,28 @@ export function DestinationsSection() {
     })
   }, [api])
 
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.load()
+    void video.play().catch(() => {})
+  }, [videoIndex])
+
+  const handleVideoEnded = () => {
+    setVideoIndex((i) => (i + 1) % HERO_VIDEOS.length)
+  }
+
   return (
     <>
-      {/* Hero video — full width, natural aspect ratio */}
+      {/* Hero video — full width, natural aspect ratio; cycles 1 → 2 → 3 → 1 */}
       <div className="relative w-full overflow-hidden bg-black">
         <video
-          src="/images/homepage.mp4"
+          ref={videoRef}
+          src={HERO_VIDEOS[videoIndex]}
           autoPlay
           muted
-          loop
           playsInline
+          onEnded={handleVideoEnded}
           aria-label="Hero Video"
           className="pointer-events-none block h-auto w-full"
         />
