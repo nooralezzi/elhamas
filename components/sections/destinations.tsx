@@ -62,8 +62,18 @@ export function DestinationsSection() {
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
-  const [videoIndex, setVideoIndex] = useState(0)
-  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Dual-buffer playlist: active layer plays; inactive preloads the next clip
+  const [activeLayer, setActiveLayer] = useState(0)
+  const [layerSrc, setLayerSrc] = useState([HERO_VIDEOS[0], HERO_VIDEOS[1]])
+  const [playingIndex, setPlayingIndex] = useState(0)
+  const video0Ref = useRef<HTMLVideoElement>(null)
+  const video1Ref = useRef<HTMLVideoElement>(null)
+  const transitioningRef = useRef(false)
+  const primedRef = useRef(false)
+
+  const getVideo = (layer: number) =>
+    layer === 0 ? video0Ref.current : video1Ref.current
 
   useEffect(() => {
     if (!api) return
@@ -74,31 +84,113 @@ export function DestinationsSection() {
     })
   }, [api])
 
+  // Keep the inactive layer loaded with the upcoming video
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-    video.load()
-    void video.play().catch(() => {})
-  }, [videoIndex])
+    const nextIndex = (playingIndex + 1) % HERO_VIDEOS.length
+    const inactive = activeLayer === 0 ? 1 : 0
+    setLayerSrc((prev) => {
+      if (prev[inactive] === HERO_VIDEOS[nextIndex]) return prev
+      const next = [...prev]
+      next[inactive] = HERO_VIDEOS[nextIndex]
+      return next
+    })
+    primedRef.current = false
+  }, [playingIndex, activeLayer])
 
-  const handleVideoEnded = () => {
-    setVideoIndex((i) => (i + 1) % HERO_VIDEOS.length)
+  useEffect(() => {
+    const inactive = activeLayer === 0 ? 1 : 0
+    const video = getVideo(inactive)
+    if (!video) return
+    video.pause()
+    video.load()
+  }, [layerSrc, activeLayer])
+
+  const switchToNext = async () => {
+    if (transitioningRef.current) return
+    transitioningRef.current = true
+
+    const nextLayer = activeLayer === 0 ? 1 : 0
+    const nextVideo = getVideo(nextLayer)
+    const currentVideo = getVideo(activeLayer)
+
+    if (nextVideo) {
+      try {
+        if (nextVideo.readyState < 2) {
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              nextVideo.removeEventListener("canplay", done)
+              resolve()
+            }
+            nextVideo.addEventListener("canplay", done)
+            window.setTimeout(done, 800)
+          })
+        }
+        if (nextVideo.paused) {
+          nextVideo.currentTime = 0
+          await nextVideo.play()
+        }
+      } catch {
+        // Autoplay can fail; still swap so playlist continues
+      }
+    }
+
+    setActiveLayer(nextLayer)
+    setPlayingIndex((i) => (i + 1) % HERO_VIDEOS.length)
+
+    window.setTimeout(() => {
+      currentVideo?.pause()
+      if (currentVideo) currentVideo.currentTime = 0
+      transitioningRef.current = false
+      primedRef.current = false
+    }, 450)
+  }
+
+  const handleTimeUpdate = (layer: number) => {
+    if (layer !== activeLayer || transitioningRef.current || primedRef.current) return
+    const video = getVideo(layer)
+    if (!video || !video.duration || !Number.isFinite(video.duration)) return
+
+    // Start the next clip early so the first frame is ready before the cut
+    if (video.duration - video.currentTime <= 0.35) {
+      primedRef.current = true
+      const nextVideo = getVideo(activeLayer === 0 ? 1 : 0)
+      if (nextVideo) {
+        nextVideo.currentTime = 0
+        void nextVideo.play().catch(() => {})
+      }
+    }
   }
 
   return (
     <>
-      {/* Hero video — full width, natural aspect ratio; cycles 1 → 2 → 3 → 1 */}
+      {/* Hero video — full width; dual layers crossfade to avoid jump */}
       <div className="relative w-full overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          src={HERO_VIDEOS[videoIndex]}
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleVideoEnded}
-          aria-label="Hero Video"
-          className="pointer-events-none block h-auto w-full"
-        />
+        {layerSrc.map((src, layer) => {
+          const isActive = activeLayer === layer
+          return (
+            <video
+              key={layer}
+              ref={layer === 0 ? video0Ref : video1Ref}
+              src={src}
+              muted
+              playsInline
+              autoPlay={layer === 0}
+              preload="auto"
+              onEnded={() => {
+                if (layer === activeLayer) void switchToNext()
+              }}
+              onTimeUpdate={() => handleTimeUpdate(layer)}
+              aria-hidden={!isActive}
+              aria-label={isActive ? "Hero Video" : undefined}
+              className={cn(
+                "pointer-events-none w-full transition-opacity duration-300 ease-out",
+                isActive
+                  ? "relative z-[1] h-auto opacity-100"
+                  : "absolute inset-x-0 top-0 z-0 h-auto opacity-0"
+              )}
+            />
+          )
+        })}
         {/* Overlay gradient for smooth transition */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-1/3 bg-gradient-to-b from-transparent to-[#2d0f12]/90" />
       </div>
